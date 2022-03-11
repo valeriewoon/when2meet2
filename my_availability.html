@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Routine</title>
+
+    <!-- Bootstrap CSS, JS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+    
+
+    <!-- vue3 CDN -->
+    <script src="https://unpkg.com/vue@next"></script>
+
+    <!-- axios cdn -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- fire base -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+
+    <!-- vue JS -->
+    <!-- <script src='features_cleaned.js'></script> -->
+    
+    <style>
+        .dropdown:hover .dropdown-menu{
+            display: block;
+            margin-top: 0;
+        }
+    </style>
+    
+
+</head>
+<body>
+    <div id='app'>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <!-- Image and text -->
+                <a class="navbar-brand" href="#">
+                    <img src="images/when2meet2logo.png" alt=""  width="200" height="110"
+                        class="d-inline-block align-text-top">
+                </a>
+                <h1 style='font-weight: bold; font-size: 35px'>My Availability</h1>
+                <!-- Hamburger toggle -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent" style="z-index:9999999">
+                    <ul class="navbar-nav ms-auto mb-2 ">
+                        <!-- <li class="nav-item">
+                            <a class="nav-link" aria-current="page" href="upcoming_meetings.html">Upcoming Events</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" aria-current="page" href="profile_page.html">Profile</a>
+                        </li>  -->
+                        <li class="nav-item">
+                            <button class='btn btn-primary' style='color: #FE904B'>
+                                <a class="nav-link active" aria-current="page" href="make_a_meeting.html">+ Add Event</a>
+                            </button>
+                        </li>
+
+                        <li class="nav-item dropdown me-5">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            More
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <a class="dropdown-item" href="upcoming_meetings.html">Upcoming Events</a>
+                                <a class="dropdown-item" href="my_friends.html">My Friends</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger" @click="logout()">Logout</a>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+    <!--Start of calendar-->
+    
+        <div class='container text-center'>
+            <!-- get headers -->
+            <div class='row sticky-top bg-white mb-0 pb-0'>
+                <div class='col bg-dark text-white rounded-pill py-3 px-2 mx-2 my-2'>Time</div>
+                <div class='col bg-dark text-white rounded-pill py-3 px-2 mx-2 my-2' v-for='day in days_of_week'>
+                    {{day}}
+                </div>
+            </div>
+            <!-- loop through time interval -->
+            <div class='row' v-for='(time, time_index) of time_intervals'>
+                <div class='col rounded-pill py-2 px-2 mx-2 my-2'>
+                    {{ time }}
+                </div>
+                <div class="col py-2 px-2 mx-2 my-2" v-for="(day, day_index) of user_availability[0]">
+                    <!-- {{day_index}} -->
+                    <div v-if="day[time_index] == 0">
+                        <div class="rounded-pill" style="background-color: gray;"
+                            @click="change_availability(day_index,time_index)">
+                            Unavailable
+                        </div>
+                    </div>
+                    <div v-else>
+                        <!-- the 1 here is to be replaced with the id of the particular person -->
+                        <div class="rounded-pill" style="background-color: #FE904B"
+                            @click="change_availability(day_index,time_index)">
+                            Available
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end my-3 me-5">
+            <button class="btn btn-primary me-md-2" type="button" @click="updateAvailability()">Update Availability</button>
+        </div>
+    </div>
+
+
+
+    <script>
+
+        // retrieve user id from localStorage
+        // let user_id = localStorage["user_id"]
+
+        // // use user ID to retrieve user information from database
+        // api_endpoint = 'https://us-central1-when2meet2-f6008.cloudfunctions.net/user/' + user_id
+        // axios.get(api_endpoint)
+        // .then(response => {
+        //     let database_data = response.data
+        //     // store user information in localStorage under 'user_info'
+        //     localStorage.setItem('user_info', JSON.stringify(database_data))
+
+        // })
+        // .catch(error => {
+        //     console.log(error)
+        // })
+
+        var firebaseConfig = {
+            apiKey: "AIzaSyBmHGKgQ2b-Ev6BAN2PfUrxqGbIZuu_ZLs",
+            authDomain: "when2meet2-f6008.firebaseapp.com",
+            projectId: "when2meet2-f6008",
+            storageBucket: "when2meet2-f6008.appspot.com",
+            messagingSenderId: "1093028913539",
+            appId: "1:1093028913539:web:7617aa1bdaa082d5c7d6b6"
+            };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Initialize auth and firestore references
+        const auth = firebase.auth()
+        const database = firebase.firestore()
+
+        // udpate firestore settings
+        database.settings({ timestampsInSnapshots: true })
+
+
+        const app = Vue.createApp({
+            data(){
+                return {
+                    days_of_week: [
+                        'Sunday',
+                        'Monday',
+                        'Tuesday',
+                        'Wednesday',
+                        'Thursday',
+                        'Friday',
+                        'Saturday'
+                    ],
+
+                    time_intervals: [
+                        '00:00',
+                        '01:00',
+                        '02:00',
+                        '03:00',
+                        '04:00',
+                        '05:00',
+                        '06:00',
+                        '07:00',
+                        '08:00',
+                        '09:00',
+                        '10:00',
+                        '11:00',
+                        '12:00',
+                        '13:00',
+                        '14:00',
+                        '15:00',
+                        '16:00',
+                        '17:00',
+                        '18:00',
+                        '19:00',
+                        '20:00',
+                        '21:00',
+                        '22:00',
+                        '23:00'
+                    ],
+
+                    user_availability: []
+
+                }
+            },
+
+            
+
+            methods:{
+                change_availability(day_index, time_index){
+                    
+                    let the_exact_date_and_time_availability = this.user_availability[0][day_index][time_index]
+
+                    if (the_exact_date_and_time_availability == 1) {
+                        // the_exact_date_and_time_availability = '8'
+                        this.user_availability[0][day_index][time_index] = 0
+                    }
+                    else {
+                        // the_exact_date_and_time_availability = '9'
+                        this.user_availability[0][day_index][time_index] = 1
+                    }
+                    // updated user_availability
+                    console.log(this.user_availability[0])
+                    
+                    // ============ update localStorage with latest user_availability========
+                    let existing = JSON.parse(localStorage['user_info'])
+                    existing.available_time_slots = this.user_availability[0]
+                    console.log(existing)
+                    localStorage.setItem('user_info', JSON.stringify(existing))
+                    // let existing = JSON.parse(user_info)
+                    // existing.available_time_slots = this.user_availability[0]
+                    // localStorage.setItem('user_info', existing)
+                },
+
+                getTimeslot() {
+                    // retrieves available_time_slot from localStorage
+                    // console.log(localStorage.getItem("user_info"))
+                    
+                    // return user_info.available_time_slots
+                    let user_id = localStorage["user_id"]
+
+                    // use user ID to retrieve user information from database
+                    api_endpoint = 'https://us-central1-when2meet2-f6008.cloudfunctions.net/user/' + user_id
+                    console.log(localStorage.getItem("user_info"))
+                    if(localStorage.getItem("user_info")==null){
+                        axios.get(api_endpoint)
+                        .then(response => {
+                            let database_data = response.data
+                            // store user information in localStorage under 'user_info'
+                            localStorage.setItem('user_info', JSON.stringify(database_data))
+                            let user_info = JSON.parse(localStorage['user_info'])
+                            this.user_availability.push(user_info.available_time_slots)
+                        })
+                        .catch(error => {
+                            console.log(error)
+                        })
+                    }else{
+                        let user_info = JSON.parse(localStorage['user_info'])
+                        this.user_availability.push(user_info.available_time_slots)
+
+                    }
+
+
+                },
+
+                updateAvailability(){
+                    console.log("==updateAvailability()==")
+                    // get user id
+                    let user_id = localStorage['user_id']
+
+                    // get available_time_slots from local storage
+                    let existing = JSON.parse(localStorage['user_info'])
+                    console.log(existing.available_time_slots)
+                    
+                    // api call to update the 
+                    let api_endpoint = "https://us-central1-when2meet2-f6008.cloudfunctions.net/user/" + user_id
+                    axios.put(api_endpoint, {
+                        available_time_slots: existing.available_time_slots
+                    })
+                    .then(response => {
+                        console.log(response.data)
+                        alert("Successfully updated availability!")
+
+                    })
+                    .catch(error => {
+                        console.log(error)
+                    })
+
+                },
+
+                logout() {
+                    console.log("logout()")
+                    // clear localStorage when logging out
+                    localStorage.clear()
+                    auth.signOut()
+                        .then(() => {
+                            console.log("User signed out by logout()")
+                            window.location.href = "auth_login.html"
+                        })
+                }
+
+            
+            },
+            created(){
+                console.log("======created======")
+                // console.log('populate user_availability with getTimeslot')                
+                this.getTimeslot()
+                              
+                // console.log(this.user_availability[0]);
+                console.log("======end created======")
+            },
+        })
+        
+        app.mount('#app');
+    </script>
+
+    <!-- Bootstrap JS CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
+</body>
+</html>

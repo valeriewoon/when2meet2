@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Friends List</title>
+    <script src="https://unpkg.com/vue@next"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    
+
+    <!-- firebase auth -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        
+
+        .btn-primary {
+            background: #FE904B!important;
+            border: none;
+            color: white;
+            font-weight: 450;
+        }
+        .my_friends,.my_friends_right{
+            border-radius: 7px;
+            background-color: rgb(235, 159, 61);
+            padding-top: 7px;
+            padding-bottom: 10px;
+            padding-left: 10px;
+            padding-right: 40px;
+            color: white;
+            border: 0px;
+            margin-bottom: 10px;
+            width: 80%;
+            /* display: flex; */
+        }
+
+        .my_friends_right{
+            /* right: -30px;
+            width: 360px;
+            position: absolute;
+            right: 250px; */
+            width: 70%;
+            padding-bottom: 5px;
+            /* display: flex; */
+        }
+
+        h1{
+            padding-bottom: 10px;
+            text-decoration: underline; 
+            font-weight: bold;
+            text-decoration-color: grey;
+            text-underline-position: under ;
+        }
+
+        #search_image{
+            size: large; 
+            width: 20px;
+            height: 20px;
+            justify-self: center;
+        } 
+
+        .search_button{
+            background-color: orange;
+            
+        }
+
+        .result {
+            padding:  5px;
+            width: 30%;
+            margin-right: 0px;
+
+        }
+
+        .results {
+            position: absolute;
+            width: 22.5%;
+            background: #fff;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23)
+        }
+
+        /* .right_side{
+            display: flex;
+        } */
+
+        .remove_friend_button{
+            margin-left: 20px;
+            width: 140px;
+            right: -220px;
+            position: relative;
+            background-color: grey;
+            color: black;
+            border: none;
+            border-radius: 7px;
+            padding: 2px;
+
+            /* right: -30px; */
+            
+        }
+
+        .add_friend_button{
+            /* border-left: 30px; */
+            background-color: grey;
+            border-radius: 7px;
+            margin-left: 30px;
+            border: none;
+            /* align-self: left; */
+            /* left: -1100px; */
+            /* position: absolute;
+            left: 500px; */
+        }
+
+        .remove_col{
+            position: absolute; 
+            float: right;   
+
+            /* border: 1px solid red; */
+            width: 40%;
+        }
+
+        .left_side{
+            background-color: rgb(250, 234, 210);
+            height: 100%;
+            border-radius: 15px;
+            border: 4px dashed grey;
+        }
+
+
+        .big_row{
+            height: fit-content;
+
+        }
+
+        input{
+            margin-left: 10px;
+        }
+
+        h2{
+            margin-left: 29px;
+        }
+
+        .nav-item {
+        padding: 0px 30px;
+        font-size: 20px;
+        }
+
+        .dropdown:hover .dropdown-menu{
+            display: block;
+            margin-top: 0;
+        }
+        
+    
+
+    </style>
+</head>
+<body>
+    <div id='friends'>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <!-- Image and text -->
+                <a class="navbar-brand" href="#">
+                    <img src="images/when2meet2logo.png" alt=""  width="200" height="110"
+                        class="d-inline-block align-text-top">
+                </a>
+                <!-- <h1 style='font-weight: bold; font-size: 35px'>My Availability</h1> -->
+                <!-- Hamburger toggle -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+    
+                <div class="collapse navbar-collapse" id="navbarSupportedContent" style="z-index:9999999">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        <!-- <li class="nav-item">
+                            <a class="nav-link" aria-current="page" href="upcoming_meetings.html">Upcoming Events</a>
+                        </li> -->
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" aria-current="page" href="my_availability.html">My Availability</a>
+                        </li> 
+                        <li class="nav-item">
+                            <button class='btn btn-primary' style='color: #FE904B'>
+                                <a class="nav-link active" aria-current="page" href="make_a_meeting.html">+ Add Event</a>
+                            </button>
+                        </li>
+    
+                        <li class="nav-item dropdown me-5">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            More
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <a class="dropdown-item" href="upcoming_meetings.html">Upcoming Events</a>
+                                <div class="dropdown-divider"></div>
+                                <button class="dropdown-item text-danger" @click="logout()">Logout</button>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div> 
+            <div class="container vh-100">
+                <div class="row big_row h-75" >    
+                    <div class="col-xl-6 left_side ">
+                        <h1>My Current List of Friends: </h1>
+                        <ul >
+                            <li v-for="friend_username of my_friends_array" class="my_friends">
+                                <div class="row">
+                                    <div class="col" >  
+                                        {{friend_username}}                          
+                                    </div>                              
+                                    <div class="col remove_col">
+                                        <button class="remove_friend_button" @click="remove_friend(friend_username)">Remove Friend</button>
+                                    </div>
+                                </div> 
+                            </li>                       
+                        </ul>
+                    </div>
+    
+                    <div class="col-xl-6">
+                        <h2>Find My Friends: </h2>
+                            <input type="text" placeholder="Search Username" v-model="search" @keydown="check_add_friend_username()"
+                                @blur="toggle = false" @focus="toggle = true">
+                            <button class="search_button" @click="check_add_friend_username()"><img id="search_image"
+                                    src="images/search_icon.png"></button>
+                            <div class="results" v-if="toggle">
+                                <div class="result" v-for="a_username in newUsernames">
+                                    <span @click="selectResult(a_username)" @mousedown.prevent>
+                                        {{a_username}}
+                                    </span>
+                                </div>
+                            </div>
+                        <br><br>
+                        
+                        <div v-if="check_friend_username_exist == true && search != ''" >
+                            <ul>
+                                <li class="my_friends_right">
+                                    
+                                    <span>{{search}}</span>
+                                    <button class="add_friend_button" @click="add_friend()" >Add to friends</button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+        
+
+
+    <script>
+        var firebaseConfig = {
+            apiKey: "AIzaSyBmHGKgQ2b-Ev6BAN2PfUrxqGbIZuu_ZLs",
+            authDomain: "when2meet2-f6008.firebaseapp.com",
+            projectId: "when2meet2-f6008",
+            storageBucket: "when2meet2-f6008.appspot.com",
+            messagingSenderId: "1093028913539",
+            appId: "1:1093028913539:web:7617aa1bdaa082d5c7d6b6"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Initialize auth and firestore references
+        const auth = firebase.auth()
+        const database = firebase.firestore()
+
+        // udpate firestore settings
+        database.settings({ timestampsInSnapshots: true })
+
+        const friends = Vue.createApp({
+            data(){
+                return{
+                    my_friends_array: [],
+            // my_friends_array should only contain emails
+                    my_friends_schedule:[],
+                    array_of_usernames : [],
+                    array_of_names : [],
+                    keyed_username : '',
+                    check_friend_username_exist : '',
+                    added_friend: '',
+                    button_clicked : false,
+                    user_list: [],
+
+                    // for the autocomplete
+                    search: '',
+                    toggle: false,
+                    usernames: [],
+                    newUsernames: [],
+                    array_usernames: [],
+                                    
+
+                }
+            },
+
+
+            created(){
+                this.get_list_of_friends_details();
+                this.populate_user_list();
+                this.get_usernames();
+
+            }, 
+
+            
+            watch: {
+                search(val) {
+                    // console.log(val)
+                    // console.log(this.usernames)
+                    this.newUsernames = [];
+                    this.usernames.forEach(element => {
+                        // console.log(element)
+                        if (element.includes(val) && val != "") {
+                            // console.log(element)
+                            this.newUsernames.push(element);
+                        }
+                        // console.log(this.newUsernames)
+                    });
+                },
+
+
+                
+            },
+            methods:{    
+                check_add_friend_username() {
+                // console.log(this.array_of_usernames)
+                let username_array = Object.values(this.array_of_usernames)
+                // console.log(this.keyed_username)
+                    
+                    if (username_array.includes(this.search)) {
+                        // console.log(true)
+                        // this.keyed_username = input_field.value
+                        this.check_friend_username_exist = true
+                    }else{
+                        this.check_friend_username_exist = false
+
+                    }
+                    // console.log(this.check_friend_username_exist)
+
+                },
+                
+                
+                selectResult(a_username) {
+                    console.log(a_username)
+                    this.search = a_username;
+                },
+
+                get_usernames() {
+                    let api_endpoint = 'https://us-central1-when2meet2-f6008.cloudfunctions.net/user'
+                    axios.get(api_endpoint)
+                        .then(response => {
+                            // console.log(response.data)
+                            let user_array = response.data
+                            for (user of user_array) {
+                                // console.log(user.name)
+                                // console.log(user.username)
+                                this.usernames.push(user.username)
+
+                            }
+
+                            // this.usernames = this.array_usernames
+                            // this.my_friends_array = response.data.my_friends
+                        })
+                        .catch(error => {
+                            console.log(error.message)
+                        })
+                },
+        
+
+                populate_user_list() {
+        // this function will populate user_list and my friends array with friends user name
+      
+                console.log("==populate_user_list()==")
+                let user_id = localStorage.getItem("user_id")
+                let api_endpoint = 'https://us-central1-when2meet2-f6008.cloudfunctions.net/user/'
+                api_endpoint+= user_id
+                axios.get(api_endpoint)
+                .then(response => {
+                    // this.user_list = response.data
+                    // console.log(this.user_list)
+                    // console.log(response.data)
+                    this.user_list = response.data
+                    this.my_friends_array = response.data.my_friends
+                    console.log(this.my_friends_array)
+                    // localStorage.setItem("user_list",JSON.stringify(response.data))
+                    // localStorage.setItem("my_friends_array",JSON.stringify(response.data.my_friends))
+                    
+                    console.log(this.user_list.available_time_slots)
+
+                    
+                })
+                .catch(error => {
+                    console.log(error.message)
+                })
+            },
+
+                get_list_of_friends_details(){
+
+                    console.log("======== get_list_of_friends_details=======")
+                    //this will populate array_of_usernane,array_of_names with all the database and names
+                    //
+                    let api_endpoint = 'https://us-central1-when2meet2-f6008.cloudfunctions.net/user'
+                    axios.get(api_endpoint)
+                    .then(response => {
+                        console.log(response.data)
+                        let user_array = response.data
+                        const current_user ={}
+                        current_user.name = this.user_list.name
+                        current_user.username = this.user_list.username
+                        current_user.available_time_slots = this.user_list.available_time_slots
+                        current_user.added= false
+                        this.my_friends_schedule.push(current_user)
+                        // localStorage.setItem("current_user",JSON.stringify(current_user))
+                        for (user of user_array) {
+                            this.array_of_usernames.push(user.username)
+                            this.array_of_names.push(user.name)
+                        for( user_name of this.my_friends_array) {
+                            if(user_name == user.username){
+                            const friend = {}
+                            friend.name = user.name
+                            friend.username = user.username
+                            friend.available_time_slots = user.available_time_slots
+                            friend.added = false
+                            this.my_friends_schedule.push(friend)
+                            
+                            // console.log(this.my_friends_schedule)
+                            
+                            // this.array_of_schedule.push(user.available_time_slots)
+
+                            }
+                        
+                        }
+                        
+                        }
+                        // this.my_friends_array = response.data.my_friends
+                    })
+                    .catch(error => {
+                        console.log(error.message)
+                    })
+                },
+
+
+
+                
+
+                // is_button_clicked() {
+                //     console.log("BUTTONCLICKED")
+                //     // console.log(this.check_friend_username_exist)
+                //     this.button_clicked = true
+                //     this.check_add_friend_username()
+                //     this.button_clicked = false
+                // },
+
+                add_friend(user_id) {
+                    // console.log(this.my_friends_array)
+                    // this.keyed_username = ''
+
+                    this.check_friend_username_exist = false
+                    this.my_friends_array.push(this.search)
+                    console.log(this.search)
+                    // console.log(this.my_friends_array)
+                    let user_id_now = localStorage.getItem("user_id")
+
+                    let url = 'https://us-central1-when2meet2-f6008.cloudfunctions.net/user/' + user_id_now
+                    axios.put(url,
+                        {
+                            my_friends: this.my_friends_array,
+                        }
+                    )
+                        .then(response => {
+
+
+                        })
+                        .catch(error => {
+
+                        });
+
+                },
+
+                remove_friend(to_remove_username) {
+                    // console.log(to_remove_username)
+                    // console.log(this.my_friends_array)
+                    this.removeItemOnce(this.my_friends_array, to_remove_username)
+                    let user_id_now = localStorage.getItem("user_id")
+
+                    // console.log(this.my_friends_array)
+                    let url = 'https://us-central1-when2meet2-f6008.cloudfunctions.net/user/' + user_id_now
+                    axios.put(url,
+                        {
+                            my_friends: this.my_friends_array,
+                        }
+                    )
+                        .then(response => {
+
+                        })
+                        .catch(error => {
+
+                        });
+                },
+
+                removeItemOnce(arr, value) {
+                    var index = arr.indexOf(value);
+                    if (index > -1) {
+                        arr.splice(index, 1);
+                    }
+                    return arr;
+                },
+                logout() {
+                        console.log("logout()")
+                        localStorage.clear()
+                        auth.signOut()
+                            .then(() => {
+                                console.log("User signed out by logout()")
+                                window.location.href = "auth_login.html"
+                            })
+                }
+        }
+    })
+
+    friends.mount('#friends'); 
+    // var input_field = document.getElementById("myInput")
+
+
+
+
+
+        // console.log(input_field)
+        // export {input_field };
+        
+        
+
+        
+    
+
+// var countries = username_list();
+// console.log(countries)
+
+/*initiate the autocomplete function on the "myInput" element, and pass along the countries array as possible autocomplete values:*/
+// autocomplete(document.getElementById("myInput"), countries);
+
+        
+    </script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
+
+
+
+    
+</body>
+</html>

@@ -1,0 +1,141 @@
+body {
+    font-family: Poppins;
+    font-weight: 500;
+    margin-bottom: 100px;
+}
+
+.nav-item {
+    padding: 0px 30px;
+    font-size: 20px;
+}
+
+.date-header {
+    font-size: 30px;
+}
+
+#header {
+    font-weight: 700
+}
+
+.table td.fit, 
+.table th.fit {
+    white-space: nowrap;
+    width: 1%;
+}
+
+.btn-primary{
+background: #FE904B!important; /*2cc8df*/
+border: none;
+color: white;
+font-weight:450;
+}
+
+.btn-primary:hover{
+background: #FE904B!important;
+outline: none;
+box-shadow: none!important;
+}
+
+.btn-primary:focus{
+background: #FE904B!important;
+outline: none;
+box-shadow: none !important;
+}
+
+.btn-primary:active{
+background: #FE904B!important;
+outline: none;
+box-shadow: none !important;
+}
+
+/* table{
+    border-collapse: separate;
+    border-spacing: 20px;
+} */
+
+#available_cell{
+    background: #FE904B!important;
+}
+
+#unavailable_cell{
+    background: #c5c3c1!important;
+}
+
+/* th, td{
+    border-radius: 15px;
+} */
+
+.People_to_add,.input_container{
+    border-radius: 7px;
+    border: 1px solid grey;
+    background-color: rgb(236, 235, 235);
+    border: 0px;
+    width: 80%;
+    height: 30px;
+    /* padding-bottom: 50px; */
+    margin-bottom: 10px;
+}
+
+.input_container{
+    width: 40%;
+    height: 30px;
+    margin-top: 5px;
+}
+
+.name{
+    float: left;
+}
+
+.add_sign{
+    float: right;
+}
+
+.send_invite_button{
+    border-radius: 7px;
+    background-color: rgb(235, 159, 61);
+    padding-top: 7px;
+    padding-bottom: 7px;
+    padding-left: 40px;
+    padding-right: 40px;
+    color: white;
+    border: 0px;
+}
+
+
+#new_meeting{
+    /* border-bottom: 1px solid black; */
+    padding-bottom: 10px;
+    text-decoration: underline; 
+    font-weight: bold;
+    text-decoration-color: orange;
+    text-underline-position: under 
+}
+
+
+.default_unavail{
+    background-color: gray;
+}
+
+.lighter_color{
+    background-color: #fdd8b5;
+}
+
+.light_color{
+    background-color: #ffb994;
+}
+
+.medium_color{
+    background-color: #ffa16e;
+}
+
+.dark_color{
+    background-color: #ff9959;
+}
+
+.darker_color{
+    background-color: #FE904B;
+}
+
+
+/* for my_friends_html */
+

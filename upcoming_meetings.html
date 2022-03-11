@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upcoming Events</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Vue -->
+    <script src="https://unpkg.com/vue@next"></script>
+
+    
+    <!-- firebase auth -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    
+    <!-- link to upcoming_meetings.js -->
+    <!-- <script src="upcoming_meetings.js"></script> -->
+
+
+    <!-- axios -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <style>
+        .dropdown:hover .dropdown-menu{
+            display: block;
+            margin-top: 0;
+        }
+
+    </style>
+    </style>
+
+</head>
+<body>
+    <div id='app'>
+        <!-- NavBar -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <!-- Image and text -->
+                <a class="navbar-brand" href="#">
+                    <img src="images/when2meet2logo.png" alt=""  width="200" height="110"
+                        class="d-inline-block align-text-top">
+                </a>
+                
+                <!-- Hamburger toggle -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+    
+                <div class="collapse navbar-collapse" id="navbarSupportedContent" style="z-index:9999999">
+                    <ul class="navbar-nav ms-auto mb-2 ">
+                        <!-- <li class="nav-item">
+                            <a class="nav-link" aria-current="page" href="upcoming_meetings.html">Upcoming Events</a>
+                        </li>-->
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" aria-current="page" href="my_availability.html">My Availability</a>
+                        </li>
+                        <li class="nav-item">
+                            <button class='btn btn-primary' style='color: #FE904B'>
+                                <a class="nav-link active" aria-current="page" href="make_a_meeting.html">+ Add Event</a>
+                            </button>
+                        </li>
+    
+                        <li class="nav-item dropdown me-5">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            More
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <a class="dropdown-item" href="my_friends.html">My Friends</a>
+                                <div class="dropdown-divider"></div>
+                                <button class="dropdown-item text-danger" @click="logout()">Logout</button>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    
+    
+        <!-- Information about Meetings -->
+        
+        <h1 id="header" class="mt-5 mb-3 ms-5">Upcoming Events</h1>
+        <hr style="color: #FE904B;height:2px;border:none;">
+        <div class="container">
+            
+            <!--  One table for every date -->
+            <div v-for="meetingObj in sortedMeetings">
+                <table class="table" v-for="(info, date) in meetingObj">
+                    <tr>
+                        <th class="border-0 date-header" colspan="3">{{ date }}</th>
+                        <th class="border-0 date-header" colspan="3">Time</th>
+                    </tr>
+                    <tr v-for="(one_info, idx) in info">
+                        <th>{{ idx+1 }}</th>
+                        <td width="80%">{{ one_info.name }}</td>
+                        <td></td>
+                        <td width="20%">{{ one_info.time }}</td>
+                        <!-- <td class="fit">
+                            <button type="button" class="btn btn-primary" style="width:220px">Meeting Details</button>
+                        </td> -->
+                    </tr>
+                </table>
+                <br><br>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+        var firebaseConfig = {
+            apiKey: "AIzaSyBmHGKgQ2b-Ev6BAN2PfUrxqGbIZuu_ZLs",
+            authDomain: "when2meet2-f6008.firebaseapp.com",
+            projectId: "when2meet2-f6008",
+            storageBucket: "when2meet2-f6008.appspot.com",
+            messagingSenderId: "1093028913539",
+            appId: "1:1093028913539:web:7617aa1bdaa082d5c7d6b6"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Initialize auth and firestore references
+        const auth = firebase.auth()
+        const database = firebase.firestore()
+
+        // udpate firestore settings
+        database.settings({ timestampsInSnapshots: true })
+
+
+
+
+        const app = Vue.createApp({
+                data() {
+                    // returns details of current user
+                    return {
+                        upcoming_meetings: [],
+                        sortedMeetings: []
+                    }
+                },
+
+                methods: {
+                    // sort meetings according to dates
+                    sortMeetings() {
+
+
+                        // create empty array for meeting objects
+                        let sorted_arr = []
+                        // iterate through meetings of user
+                        for (let meeting of this.upcoming_meetings) {
+
+                            // format date time object
+
+                            let date = meeting.date
+                            // console.log(meeting.time.split('-')[0].split(':')[0])
+                            // date_split = date.split("/")
+                            // console.log(date_split)
+                            // date_obj = new Date(date_split[2], date_split[1], date_split[0], Number(meeting.time.split('-')[0].split(':')[0]))
+                            // console.log(Number(date_obj))
+                            // create new meeting object to be put in sorted_array
+                            let meetingObj = {
+                                time: meeting.time,
+                                name: meeting.name
+                            }
+
+                            // if the sorted_arr is empty, create a new meeting object with date of meeting as key
+                            if (sorted_arr.length == 0) {
+                                let new_mtg = {}
+
+                                new_mtg[date] = [meetingObj]
+                                // push the new meeting object into the sorted_arr
+
+                                sorted_arr.push(new_mtg)
+                            }
+
+                            else { // sorted_arr is populated
+                                let isinArr = false
+                                for (let mtgObj of sorted_arr) {
+                                    for (let [existing_date, existing_mtgs] of Object.entries(mtgObj)) {
+                                        if (existing_date == date) {
+                                            isinArr = true
+                                            existing_mtgs.push(meetingObj)
+                                        }
+                                    }
+                                }
+                                if (!isinArr) {
+                                    let new_mtg = {}
+                                    new_mtg[date] = [meetingObj]
+                                    sorted_arr.push(new_mtg)
+                                }
+                            }
+                        }
+                        console.log('sorted_arr')
+                        console.log(sorted_arr)
+                        this.sortedMeetings = sorted_arr
+                    },
+
+                    getUpcomingMeetings() {
+                        let user_id = localStorage['user_id']
+                        let api_endpoint = "https://us-central1-when2meet2-f6008.cloudfunctions.net/user/" + user_id
+                        axios.get(api_endpoint)
+                            .then(response => {
+
+                                let api_data = response.data.upcoming_meetings;
+
+                                let new_meetings = []
+
+                                for (let meetingObj of api_data) {
+                                    let date = meetingObj.date
+                                    let split_date = date.split("/")
+                                    let dd = split_date[0]
+                                    let mm = split_date[1]
+                                    let yyyy = split_date[2]
+
+                                    let time_range = meetingObj.time
+                                    let first_time = time_range.split("-")[0]
+                                    let first_hour = first_time.split(":")[0]
+
+                                    let date_obj = new Date(yyyy, mm, dd, first_hour)
+
+                                    if (Date.now() <= date_obj) {
+                                        let newObj = {
+                                            id: meetingObj.id,
+                                            date: meetingObj.date,
+                                            date_obj: date_obj,
+                                            time: meetingObj.time,
+                                            name: meetingObj.name
+                                        }
+
+                                        new_meetings.push(newObj)
+                                    }
+
+                                }
+
+                                new_meetings.sort(function (a, b) {
+                                    return new Date(a.date_obj) - new Date(b.date_obj)
+                                })
+
+
+                                console.log(new_meetings)
+
+                                this.upcoming_meetings = new_meetings;
+                                console.log('upcoming meetings')
+                                console.log(this.upcoming_meetings)
+                                this.sortMeetings()
+                            })
+                            .catch(error => {
+                                console.log(error)
+                            })
+                    },
+
+                    logout() {
+                        console.log("logout()")
+                        localStorage.clear()
+                        auth.signOut()
+                            .then(() => {
+                                console.log("User signed out by logout()")
+                                window.location.href = "auth_login.html"
+                            })
+                    },
+                },
+
+                created() {
+                    console.log("getUpcomingMeetings")
+                    this.getUpcomingMeetings();
+                }
+
+            });
+        app.mount('#app');
+    </script>
+
+
+    <!-- Option 1: Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+</body>
+</html>

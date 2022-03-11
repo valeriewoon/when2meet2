@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Make a Meeting</title>
+
+    <!-- Bootstrap CSS, JS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+    
+
+    <!-- vue3 CDN -->
+    <script src="https://unpkg.com/vue@next"></script>
+
+    <!-- axios CDN -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- fire base -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+
+    <!-- Our data JS file link -->
+    <script src="https://smtpjs.com/v3/smtp.js"></script>
+
+    <!-- Internal style -->
+    <style>
+        .check {
+            list-style-image: url('/images/check.png');
+        }
+        .remove{
+            list-style-image: url('/images/remove.png');
+        }
+        .width{
+            width: 50%;
+        }
+
+        .dropdown:hover .dropdown-menu{
+            display: block;
+            margin-top: 0;
+        }
+
+    </style>
+    
+
+</head>
+<body id="app">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white" id="navbar">
+        <div class="container-fluid">
+            <!-- Image and text -->
+            <a class="navbar-brand" href="my_availability.html">
+                <img src="images/when2meet2logo.png" alt="" height="110"
+                    class="d-inline-block align-text-top">
+            </a>
+            <a class="navbar-brand" href="#" style='font-weight: bold; font-size: 35px'></a>
+            <!-- Hamburger toggle -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent" style="z-index:9999999">
+                <ul class="navbar-nav ms-auto mb-2 ">
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" aria-current="page" href="my_availability.html">My Availability</a>
+                    </li> 
+
+                    <li class="nav-item dropdown me-5">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        More
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <a class="dropdown-item" href="upcoming_meetings.html">Upcoming Events</a>
+                            <a class="dropdown-item" href="my_friends.html">My Friends</a>
+                            <div class="dropdown-divider"></div>
+                            <button class="dropdown-item text-danger" @click="logout()">Logout</button>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Create New Meeting Options -->
+    <div class='container-fluid py-3'>
+        <div class='row'>
+            <!-- column for meeting information -->
+            <div class="col col-4 py-5 pe-0">
+                <div style="position: sticky; top: 30px; margin-left: 45px;">
+                    <h3 id='new_meeting'>Create A Meeting</h3>
+                    <input type="text" placeholder="New Meeting Name" id="meeting_name" v-model="meeting_name">
+                    <br>
+                    <div class="row">
+                        <div class="col">
+
+                            <!-- Select Start Date -->
+                            <div class="mb-3">
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="date" class="form-control w-50" id="start_date" v-model='start_date' placeholder="start_date">
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- column for selecting time frame -->
+                    <div class="row">
+                        <div class="col">
+                            <span>Select Time Frame:</span>
+                            <br>
+                            <div>
+                                <span>No earlier than: </span>
+                                <select name="no_ealier_than" id="no_ealier_than">
+                                    <option :value="idx" v-for="(time,idx) in no_modification_time_intervals">{{time}}</option>
+                                </select>
+                                <br>
+                                <span>No later than: </span>
+                                <select name="no_later_than" id="no_later_than">
+                                    <option :value="idx" v-for="(time,idx) in no_modification_time_intervals">{{time}}</option>
+                                </select> 
+                            </div>
+                            <br>
+                            <button @click="process_timeframe()" class="send_invite_button mx-2"> Set</button>
+                            <button @click="reset_page()" class="send_invite_button">Reset</button>
+                        </div>
+                    </div>
+                    <br>
+                    
+                    Members: <br>
+                    <!-- this div uses v-for to loop through all the users that to create add button -->
+                    <!-- this button element passes the item obj to addPerson function  -->
+                    <div v-for= "obj in my_friends_schedule" class="width">
+
+                        <div v-if='obj.added == false' >
+                            <button class="People_to_add" @click="addPerson(obj)" >
+                                <span class="name" >{{obj.name}}</span>
+                                <span class="add_sign">Add</span>
+                            </button>
+                        </div>
+                            
+                        <div v-else >
+                            <button class="People_to_add" @click="removePerson(obj)" style="background-color: #FE904B">
+                                <span class="name" >{{obj.name}}</span>
+                                <span class="add_sign">Remove</span>
+                            </button>
+                        </div>
+                    </div> 
+                    
+                    <br>
+                    <br>
+                    
+                    <p> {{ processSelected }}</p>
+                    
+                    <div v-if="selected_meeting.date != ''">
+                        <h5>Meeting Details</h5>
+                        Name: {{meeting_name}}
+                        <br>
+                        Date: {{ this.selected_meeting.date }}
+                        <br>
+                        Time: {{ this.selected_meeting.time }}
+                    </div>
+                    
+
+                    <br>
+                    <button class="send_invite_button" @click="send_invite()">Send Invite</button>
+                    <br>
+                    <br>
+                    <div id="display_avail_id" class="width">
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- column for shared schedule of each individual -->
+            <div v-if="showCalendar" class='col col-8 text-center'>
+                <!-- this is the headers role -->
+                <div>
+                    <div class="row sticky-top bg-white">
+                        <div class='col bg-dark text-white rounded-pill py-2 px-2 mx-2 my-2'>Time</div>
+                        <div class='col bg-dark text-white rounded-pill py-2 px-2 mx-2 my-2' v-for='(date, idx) of dates'>
+                            {{date}} <br> {{days[idx]}}
+                        </div>
+                    </div>
+                    <div class='row' v-for='(time, time_index) of time_intervals'> 
+                        <div class='col bg-dark text-white rounded-pill py-2 px-2 mx-2 my-2'> {{ time }} </div>
+                            <!-- find the user and his specific available slots -->
+                        <div class='col py-2 px-2 my-2 mx-2' v-for='(avail_days_arr, day_index) of compounded_time_slot'>
+                        
+                            <!-- Every column correspond to availability on particular date
+                            For example. Item[0] => availability on monday 00:00 hour
+                            as it is a for loop, the first row will be the availability at DIFFERENT days but SAME  hour
+                            
+                                        mon tues wed thus fri sat sun
+                            row 00:00    1   1    1   1    1   1   1
+                            -->
+                            
+                            
+                            
+                            
+                            
+                            
+                            <div v-if="avail_days_arr[time_index]==0">
+                                <div class='rounded-pill default_unavail' @click="selectCell(time_index, day_index)" >
+                                    0 Avail
+                                </div>
+                            </div>
+                            <div v-else-if="avail_days_arr[time_index]==1" @mouseover="display_availability(day_index,time_index)" @mouseleave="display_nothing()">
+                                <div class="rounded-pill lighter_color" @click="selectCell(time_index, day_index)" v-if="avail_days_arr[time_index] == added_list_of_users.length">
+                                    All Avail
+                                </div>
+                                <div class="rounded-pill lighter_color" @click="selectCell(time_index, day_index)" v-else>
+                                    1 avail
+                                </div>
+                            </div>
+                            <div v-else-if="avail_days_arr[time_index]==2" @mouseover="display_availability(day_index,time_index)" @mouseleave="display_nothing()">
+                                <div class="rounded-pill darker_color" @click="selectCell(time_index, day_index)" v-if="avail_days_arr[time_index] == added_list_of_users.length">
+                                    All Avail
+                                </div>
+                                <div class="rounded-pill light_color" @click="selectCell(time_index, day_index)" v-else>
+                                    2 avail
+                                </div>
+                            </div>
+                            <div v-else-if="avail_days_arr[time_index]==3" @mouseover="display_availability(day_index,time_index)" @mouseleave="display_nothing()">
+                                <div class="rounded-pill darker_color" @click="selectCell(time_index, day_index)" v-if="avail_days_arr[time_index] == added_list_of_users.length">
+                                    All Avail
+                                </div>
+                                <div class="rounded-pill medium_color" @click="selectCell(time_index, day_index)" v-else>
+                                    3 avail
+                                </div>
+                            </div>
+                            <div v-else-if="avail_days_arr[time_index]==4" @mouseover="display_availability(day_index,time_index)" @mouseleave="display_nothing()">
+                                <div class="rounded-pill darker_color" @click="selectCell(time_index, day_index)" v-if="avail_days_arr[time_index] == added_list_of_users.length">
+                                    All Avail
+                                </div>
+                                <div class="rounded-pill dark_color" @click="selectCell(time_index, day_index)" v-else>
+                                    4 avail
+                                </div>
+                            </div>
+                            <div v-else-if="avail_days_arr[time_index]==5" @mouseover="display_availability(day_index,time_index)" @mouseleave="display_nothing()">
+                                <div class="rounded-pill darker_color" @click="selectCell(time_index, day_index)" v-if="avail_days_arr[time_index] == added_list_of_users.length">
+                                    All Avail
+                                </div>
+                                <div class="rounded-pill darker_color" @click="selectCell(time_index, day_index)" v-else>
+                                    5 avail
+                                </div>
+                            </div>
+                            <div v-else @mouseover="display_availability(day_index,time_index)" @mouseleave="display_nothing()">
+                                <div class="rounded-pill darker_color" @click="selectCell(time_index, day_index)" v-if="avail_days_arr[time_index] == added_list_of_users.length">
+                                    All Avail
+                                </div>
+                                <div class="rounded-pill darker_color" @click="selectCell(time_index, day_index)" v-else>
+                                    >5 avail
+                                </div>
+                            </div>
+                            
+                            
+                        </div>  
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <!-- Bootstrap JS CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
+    <script>
+        var firebaseConfig = {
+            apiKey: "AIzaSyBmHGKgQ2b-Ev6BAN2PfUrxqGbIZuu_ZLs",
+            authDomain: "when2meet2-f6008.firebaseapp.com",
+            projectId: "when2meet2-f6008",
+            storageBucket: "when2meet2-f6008.appspot.com",
+            messagingSenderId: "1093028913539",
+            appId: "1:1093028913539:web:7617aa1bdaa082d5c7d6b6"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Initialize auth and firestore references
+        const auth = firebase.auth()
+        const database = firebase.firestore()
+
+        // udpate firestore settings
+        database.settings({ timestampsInSnapshots: true })
+    
+        const app = Vue.createApp({
+            data() {
+                // returns an object
+                return {
+                    days_of_week: [
+                    'Sunday',
+                    'Monday',
+                    'Tuesday',
+                    'Wednesday',
+                    'Thursday',
+                    'Friday',
+                    'Saturday'
+                    ], 
+                    time_intervals:[
+                    '00:00',
+                    '01:00',
+                    '02:00',
+                    '03:00',
+                    '04:00',
+                    '05:00',
+                    '06:00',
+                    '07:00',
+                    '08:00',
+                    '09:00',
+                    '10:00',
+                    '11:00',
+                    '12:00',
+                    '13:00',
+                    '14:00',
+                    '15:00',
+                    '16:00',
+                    '17:00',
+                    '18:00',
+                    '19:00',
+                    '20:00',
+                    '21:00',
+                    '22:00',
+                    '23:00'
+                    ],
+
+                    my_friends_array: [],
+                    // my_friends_array should only contain emails
+                    my_friends_schedule:[],
+                    //this array is to send emails to added person
+                    added_list_of_users:[],
+                    array_of_usernames : [],
+                    array_of_names : [],
+                    keyed_username : '',
+                    check_friend_username_exist : '',
+                    added_friend: '',
+                    button_clicked : false,
+        
+        
+                    // ====================== for make a meeting =================
+        
+                    user_list: [],
+                    days: [],
+                    dates: [],
+                    no_modification_time_intervals:[
+                    '00:00',
+                    '01:00',
+                    '02:00',
+                    '03:00',
+                    '04:00',
+                    '05:00',
+                    '06:00',
+                    '07:00',
+                    '08:00',
+                    '09:00',
+                    '10:00',
+                    '11:00',
+                    '12:00',
+                    '13:00',
+                    '14:00',
+                    '15:00',
+                    '16:00',
+                    '17:00',
+                    '18:00',
+                    '19:00',
+                    '20:00',
+                    '21:00',
+                    '22:00',
+                    '23:00'
+                    ],
+                    compounded_time_slot:[
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                    ],
+        
+                    start_date: '',
+        
+                    months: [
+                    'January',
+                    'February',
+                    'March',
+                    'April',
+                    'May',
+                    'June',
+                    'July',
+                    'August',
+                    'September',
+                    'October',
+                    'November',
+                    'December'
+                    ],
+        
+                    selected_times: [],
+                    meeting_name:'',
+                    selected_meeting: {
+                        
+                        date: '',
+                        time: ''
+                    },
+        
+                    showCalendar: false,
+
+                    //datas for mouse over event 
+                    hover : false,
+                    compounded_string_time_slot : [
+                        [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],
+                        [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],
+                        [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],
+                        [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],
+                        [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],
+                        [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],
+                        [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]
+                    ],
+                    not_avail_time_slot : [
+                        [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],
+                        [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],
+                        [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],
+                        [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],
+                        [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],
+                        [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],
+                        [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]
+                    ],
+
+                }
+            },
+            // ===================for my_availability.html===================
+
+        
+            created() {
+            // this should populate the user list
+            console.log('===========created()==============')
+            this.populate_user_list();
+            this.get_list_of_friends_details();
+            this.refresh_friends();
+            console.log('========= end created() =========')
+            },
+            
+            methods: {
+        
+
+            populate_user_list() {
+                // this function will populate user_list and my friends array with friends user name
+            
+                console.log("==populate_user_list()==")
+                let user_id = localStorage.getItem("user_id")
+                let api_endpoint = 'https://us-central1-when2meet2-f6008.cloudfunctions.net/user/'
+                api_endpoint+= user_id
+                
+                if(localStorage.getItem("user_info")==null){
+                    axios.get(api_endpoint)
+                    .then(response => {
+                        this.user_list = response.data
+                        this.my_friends_array = response.data.my_friends  
+                        console.log(this.user_list.available_time_slots)
+                    })
+                    .catch(error => {
+                        console.log(error.message)
+                    })
+                }else{
+                    let user_info = JSON.parse(localStorage['user_info'])
+                    this.user_list = user_info
+                    this.user_list.available_time_slots = user_info.available_time_slots
+                    this.my_friends_array = user_info.my_friends
+                }
+
+            },
+
+            refresh_friends(){
+                let user_id = localStorage.getItem("user_id")
+                let api_endpoint = 'https://us-central1-when2meet2-f6008.cloudfunctions.net/user/'
+                api_endpoint+= user_id
+                axios.get( api_endpoint ) 
+                .then( response => {
+                    this.user_list.my_friends = response.data.my_friends
+                    this.my_friends_array = response.data.my_friends 
+                } )
+                .catch( error => {console.log(error.message)} )
+
+
+
+            },
+
+        
+            get_list_of_friends_details() {
+                console.log("======== get_list_of_friends_details=======")
+                //this will populate array_of_usernane,array_of_names with all the database and names
+                //
+                let api_endpoint = 'https://us-central1-when2meet2-f6008.cloudfunctions.net/user'
+                axios.get(api_endpoint)
+                .then(response => {
+                    // console.log(response.data)
+                    let user_array = response.data
+                    const current_user ={}
+                    current_user.upcoming_meetings = this.user_list.upcoming_meetings
+                    current_user.id = this.user_list.id
+                    current_user.email = this.user_list.email
+                    current_user.name = this.user_list.name
+                    current_user.username = this.user_list.username
+                    current_user.available_time_slots = this.user_list.available_time_slots
+                    current_user.added= false
+                    this.my_friends_schedule.push(current_user)
+                    // localStorage.setItem("current_user",JSON.stringify(current_user))
+                    for (user of user_array) {
+                        this.array_of_usernames.push(user.username)
+                        this.array_of_names.push(user.name)
+                    for( user_name of this.my_friends_array) {
+                        if(user_name == user.username){
+                        const friend = {}
+                        friend.upcoming_meetings = user.upcoming_meetings
+                        friend.id = user.id
+                        friend.email = user.email
+                        friend.name = user.name
+                        friend.username = user.username
+                        friend.available_time_slots = user.available_time_slots
+                        friend.added = false
+                        this.my_friends_schedule.push(friend)
+                        
+                        console.log(this.my_friends_schedule)
+                        
+                        // this.array_of_schedule.push(user.available_time_slots)
+
+                        }
+                    
+                    }
+                    
+                    }
+                    // this.my_friends_array = response.data.my_friends
+                })
+                .catch(error => {
+                    console.log(error.message)
+                })
+            },
+        
+
+            is_button_clicked() {
+                console.log("BUTTONCLICKED")
+                // console.log(this.check_friend_username_exist)
+                this.button_clicked = true
+                this.check_add_friend_username()
+                // this.button_clicked = false
+            },
+
+            // ==================== for make a meeting ==================
+            checkItems(day) {
+                return true
+            },
+
+            display_availability(day_index,time_index){
+                console.log(document.getElementById("display_avail_id"))
+                console.log(this.compounded_string_time_slot[day_index][time_index])
+                
+
+                template =`
+                <table class="table">
+                    <thead class="bg-dark text-white">
+                        <tr>
+                            <th scope="col">Avail</th>
+                            <th scope="col">Not Avail</th>
+                        </tr>
+                    </thead>
+                    
+                    <tr>
+                        <td>
+                            <ul class="check">`
+                for(person_name of this.compounded_string_time_slot[day_index][time_index]){
+                    template += `<li>${person_name}</li>`
+                }
+                template+=            `</ul>
+                        </td>
+                        
+                        <td>
+                            <ul class="remove">`
+        
+                for(person_name of this.not_avail_time_slot[day_index][time_index]){
+                    template += `<li>${person_name}</li>`
+                }            
+                            
+                template+=         `</ul>
+                        </td>
+                    </tr>
+
+                </table>      
+                `
+                document.getElementById("display_avail_id").innerHTML= template
+
+                
+                
+            },
+            display_nothing(){
+                document.getElementById("display_avail_id").innerHTML = null
+            },
+
+            addPerson(person_obj) {
+                console.log("====== addPerson ======")
+                console.log(person_obj)
+                // toggle when user clicks on the member's names
+                if (person_obj.added == false) {
+                person_obj.added = true
+                //add this user into added list 
+                this.added_list_of_users.push(person_obj)
+
+                let this_person_available_time_slot = person_obj.available_time_slots
+                // this for loop is to add all thier avaiable time slot in to vue data of compounded time slot
+                // compounded time slot will be used to display all time slot
+                //first loop is for each day
+                for (index in this_person_available_time_slot) {
+                    let current_time_slot = this.compounded_time_slot[index]
+                    this.compounded_time_slot[index] = this_person_available_time_slot[index].map(function (num, idx) {
+                    return num + current_time_slot[idx]
+                    })
+
+
+                }
+                }
+                else if (person_obj.added == true) {
+                //delete this user from added list
+                for(idx in this.added_list_of_users){
+                    if(this.added_list_of_users[idx].username == person_obj.username){
+                        delete this.added_list_of_users[idx]
+                    }
+                }
+                }
+                let this_person_available_time_slot = person_obj.available_time_slots
+                for (i in this.compounded_string_time_slot){
+                        
+                        for(j in this.compounded_string_time_slot[i]){
+                            
+                            if(this_person_available_time_slot[i][j] == 1){
+                                this.compounded_string_time_slot[i][j].push(person_obj.name)
+                            }
+                        }
+
+                }
+                for (i in this.not_avail_time_slot){
+                        
+                        for(j in this.not_avail_time_slot[i]){
+                            
+                            if(this_person_available_time_slot[i][j] == 0){
+                                this.not_avail_time_slot[i][j].push(person_obj.name)
+                            }
+                        }
+
+                }
+
+
+
+                console.log(this.compounded_string_time_slot)
+                console.log(this.not_avail_time_slot)
+            },
+
+            removePerson(person_obj){
+                console.log("==========remove========")
+                person_obj.added = false
+                let this_person_available_time_slot = person_obj.available_time_slots
+                
+                for(idx in this.added_list_of_users){
+                    if(this.added_list_of_users[idx].id == person_obj.id){
+                    this.added_list_of_users.splice(idx,1)
+                    }
+                    
+                }
+                // this for loop is to subtract all thier avaiable time slot in to vue data of compounded time slot
+                // compounded time slot will be used to display all time slot
+                for (obj in this_person_available_time_slot) {
+                    let current_time_slot = this.compounded_time_slot[obj]
+                    this.compounded_time_slot[obj] = this_person_available_time_slot[obj].map(function (num, idx) {
+                    return current_time_slot[idx] - num
+                    })
+                }
+                
+                for (i in this.compounded_string_time_slot){               
+                        for(j in this.compounded_string_time_slot[i]){  
+                            if(this_person_available_time_slot[i][j] == 1){
+                                // this.compounded_string_time_slot[i][j].push(person_obj.name)
+                                for(k in this.compounded_string_time_slot[i][j]){
+                                    
+                                    if(this.compounded_string_time_slot[i][j][k] == person_obj.name){
+                                        
+                                        this.compounded_string_time_slot[i][j].splice(k,1)
+                                    }
+                                }
+                            }
+                        }
+                }
+                for (i in this.not_avail_time_slot){               
+                        for(j in this.not_avail_time_slot[i]){  
+                            if(this_person_available_time_slot[i][j] == 0){
+                                // this.compounded_string_time_slot[i][j].push(person_obj.name)
+                                for(k in this.not_avail_time_slot[i][j]){
+                                    
+                                    if(this.not_avail_time_slot[i][j][k] == person_obj.name){
+                                        
+                                        this.not_avail_time_slot[i][j].splice(k,1)
+                                    }
+                                }
+                            }
+                        }
+                }
+
+                
+                console.log(this.compounded_string_time_slot)
+                console.log(this.not_avail_time_slot)
+                console.log("==========remove end========")
+
+            },
+
+            process_timeframe() {
+                //get dates for calendar
+                this.generate_days()
+                
+                console.log("========process time frame start==============")
+                let start_time = document.getElementById("no_ealier_than").value
+                let end_time = document.getElementById("no_later_than").value
+                console.log(start_time)
+                console.log(end_time)
+                
+                
+                
+                //this for loop will edit compounded_time_slot
+                for(day in this.compounded_time_slot){
+                    this.compounded_time_slot[day] = this.compounded_time_slot[day].slice(start_time,end_time)
+                    
+                }
+                console.log(this.compounded_time_slot.Monday)
+
+                //now we need to edit the rows
+                // for loop all the data into a list so we can use slice on list 
+                // we cant use slice on object array 
+                let time_intervals = []
+                for(time of this.time_intervals){
+                    time_intervals.push(time)
+                }
+                //slicing
+                time_intervals = time_intervals.slice(start_time,end_time)
+                //now clear the time 
+                this.time_intervals = []
+
+                for(time of time_intervals){
+                    this.time_intervals.push(time)
+                }
+                console.log(time_intervals)
+
+                this.showCalendar = true
+
+            },
+
+            reset_page(){
+                location.reload()
+                },
+
+            generate_days() {
+                if ( this.start_date != '' ) {
+                    // create a new date object
+                    Date.prototype.addDays = function(days) {
+                        var date = new Date(this.valueOf());
+                        date.setDate(date.getDate() + days);
+                        return date;
+                    }
+                    let start_date = new Date(this.start_date)
+                    console.log(typeof start_date)
+                    let dates_arr = []
+                    let days_arr = []
+
+                    // loop through for the week
+                    // every time adding one day
+                    for (let i=0; i<7; i++) {
+                        let new_date = start_date.addDays(i)
+
+                        let date = new_date.getDate()
+                        let month = new_date.getMonth() + 1
+                        let year = new_date.getFullYear()
+                        let day = this.days_of_week[new_date.getDay()]
+
+                        let date_str = date + "/" + month + "/" + year
+                        dates_arr.push(date_str)
+                        days_arr.push(day)
+                    }
+                    
+                    this.dates = dates_arr
+                    this.days = days_arr
+                }
+
+            },
+
+            selectCell(time_idx, day_idx) {
+                // triggered when a user selects on a cell in the calendar
+                console.log(time_idx)
+                console.log(day_idx)
+
+                let selectedObj = {
+                    day: Number(day_idx),
+                    time: time_idx
+                }
+
+                this.selected_times.push(selectedObj)
+                
+                // selected_times contains the objects of all the cells that user clicked on
+                console.log(this.selected_times);
+
+            },
+            
+            sendEmail(body,subject,receiver) {
+                Email.send({
+                Host: "smtp.gmail.com",
+                Username: "when2meet2@gmail.com",
+                Password: "Thisisw2w",
+                To: `${receiver}`,
+                From: "when2meet2@gmail.com",
+                Subject: `${subject}`,
+                Body: `${body}`,
+                })
+                .then(function (message) {
+                    alert("mail sent successfully")
+                });
+            },
+
+            update_meeting(uid,user_schedule){
+
+                let url = 'https://us-central1-when2meet2-f6008.cloudfunctions.net/user/' + uid
+            axios.put(url,
+                {
+                    upcoming_meetings: user_schedule,
+                }
+
+            )
+
+                .then(response => {
+
+                })
+                .catch(error => {
+
+                });
+
+            },
+
+            send_invite(){
+                console.log('==== send_invite ====')
+                let sender_name = this.user_list.name
+                let template = `
+                You are invited by ${sender_name}\n
+                To participate in ${this.meeting_name}\n
+                On ${this.selected_meeting.date}\n
+                at ${this.selected_meeting.time}\n
+                Please be Punctual `;
+                //this line sends email
+                // create meeting object
+                alert(template)
+
+                for(added of this.added_list_of_users){
+                    console.log(added)
+
+                    
+                    const meeting_detail = {}
+                    meeting_detail.date = this.selected_meeting.date
+                    meeting_detail.id = added.upcoming_meetings.length + 2
+                    meeting_detail.name = this.meeting_name
+                    meeting_detail.time = this.selected_meeting.time
+                    added.upcoming_meetings.push(meeting_detail)
+                    this.update_meeting(added.id,added.upcoming_meetings)
+                    this.sendEmail(template,this.meeting_name,added.email)
+                }
+
+                //this line updates server
+                // alert(template)
+
+            },
+
+            logout() {
+                        console.log("logout()")
+                        localStorage.clear()
+                        auth.signOut()
+                            .then(() => {
+                                console.log("User signed out by logout()")
+                                window.location.href = "auth_login.html"
+                            })
+                }
+
+            },
+            // ===================for make a meeting ===================
+            computed: {
+            processSelected() {
+            let sorted_selected_obj = {
+                date: '',
+                times: []
+            }
+
+            for ( selectedObj of this.selected_times ) {
+                let date = selectedObj.day
+                let time = selectedObj.time
+                
+                if ( sorted_selected_obj.date == '' && sorted_selected_obj.times == '' ) {
+                    sorted_selected_obj.date = date
+                    sorted_selected_obj.times = [time]
+                }
+
+                else {
+                    // if date is the same, push time into times arr
+                    if ( sorted_selected_obj.date == date ) {
+                        sorted_selected_obj.times.push(time)
+                    }
+
+                    // else, change sorted_selected_obj to take on new date and new time
+                    else {
+                        sorted_selected_obj.date = date
+                        sorted_selected_obj.times = [time]
+                    }
+                }     
+            }
+
+            console.log(sorted_selected_obj)
+
+            // get min and max times in times array (start time and end time)
+            let times = sorted_selected_obj.times
+            let min = Math.min(...times);
+            let max = Math.max(...times);
+            
+            console.log('min: ', min)
+            console.log('max: ', max)
+
+            // only update selected_meeting if user has selected anything (to avoid it showing undefined)
+            if ( times.length > 0 && min != max ) {
+                let duration = this.time_intervals[min] + "-" + this.time_intervals[max]
+
+                this.selected_meeting = {
+                    date: this.dates[sorted_selected_obj.date],
+                    time: duration
+                }
+            }
+
+            // if user has only selected one time (i.e min = max)
+            else if ( times.length > 0 && min != -1 && min == max ) {
+                let duration = this.time_intervals[min] + "-" + ''
+
+                this.selected_meeting = {
+                    date: this.dates[sorted_selected_obj.date],
+                    time: duration
+                }
+            }
+            
+        }
+        }
+        });
+
+        app.mount('#app');                    
+    </script>
+    
+</body>
+</html>
+
+
